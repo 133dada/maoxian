@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8"> <!-- 确保编码为 UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寻宝游戏</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>寻宝探险</h1>
+        <p>踏上冒险，寻找宝藏！</p>
+    </header>
+
+    <main>
+        <div id="game-container">
+            <button id="start-button">开始冒险</button>
+            <div id="status-container"></div>
+        </div>
+    </main>
+
+    <!-- 背景音乐 -->
+    <audio id="background-music" loop>
+        <source src="background-music.mp3" type="audio/mp3">
+    </audio>
+
+    <script src="treasureMap.js"></script>
+    <script>
+        const statusContainer = document.getElementById("status-container");
+        const startButton = document.getElementById("start-button");
+
+        // 从本地存储加载玩家信息
+        function loadPlayerData() {
+            const playerData = JSON.parse(localStorage.getItem("playerData"));
+            if (playerData) {
+                displayStatus(`欢迎回来，${playerData.nickname}! 游戏历史: ${playerData.history}`);
+            }
+        }
+
+        // 更新游戏状态
+        function displayStatus(message, className = "info") {
+            const statusMessage = document.createElement("div");
+            statusMessage.classList.add(className);
+            statusMessage.textContent = message;
+            statusContainer.appendChild(statusMessage);
+        }
+
+        // 从txt文件加载游戏数据
+        async function loadGameData() {
+            try {
+                const response = await fetch("data.txt");  <!-- 修改这里 -->
+                if (!response.ok) {
+                    throw new Error(`加载失败: ${response.statusText}`);
+                }
+                const data = await response.text();
+                console.log("加载的游戏数据：", data);  // 打印加载的文件内容
+
+                // 处理数据
+                const gameData = data.split("\n").reduce((acc, line) => {
+                    const [key, value] = line.split("：");
+                    if (key && value) {
+                        acc[key.trim()] = value.trim();
+                    }
+                    return acc;
+                }, {});
+
+                return gameData;
+            } catch (error) {
+                console.error("加载游戏数据失败:", error);
+                displayStatus("加载游戏数据失败", "error");
+            }
+        }
+
+        // 启动寻宝游戏
+        async function startTreasureHunt() {
+            startButton.disabled = true;
+            displayStatus("冒险开始！寻找第一个线索...");
+
+            // 加载游戏数据
+            const gameData = await loadGameData();
+            displayStatus(`图书馆线索: ${gameData["图书馆"]}`);
+            displayStatus(`神庙线索: ${gameData["神庙"]}`);
+            displayStatus(`守卫线索: ${gameData["守卫"]}`);
+
+            // 假设这是一个简单的冒险逻辑
+            setTimeout(() => {
+                displayStatus("你找到了第一个线索，解码成功！");
+                displayStatus("你通过了守卫的考验，进入了神庙！");
+                displayStatus("恭喜你！你找到了传说中的宝藏！", "success");
+
+                // 保存游戏历史
+                const playerData = {
+                    nickname: "玩家1", // 可以根据需要动态设置
+                    history: "找到第一个线索 -> 进入神庙 -> 找到宝藏"
+                };
+                localStorage.setItem("playerData", JSON.stringify(playerData));
+            }, 3000);
+
+            startButton.disabled = false;
+        }
+
+        // 页面加载时，启动背景音乐
+        function playBackgroundMusic() {
+            const audio = document.getElementById("background-music");
+            audio.play().catch((error) => {
+                console.error("音频播放失败:", error);
+            });
+        }
+
+        startButton.addEventListener("click", () => {
+            playBackgroundMusic();  // 用户点击按钮时播放音乐
+            startTreasureHunt();     // 启动游戏
+        });
+
+        // 页面加载时加载玩家信息
+        window.onload = () => {
+            loadPlayerData();
+        };
+    </script>
+</body>
+</html>
